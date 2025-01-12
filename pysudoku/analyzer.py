@@ -1,5 +1,6 @@
 from typing import overload, override
 
+from pysudoku.move import Move
 from pysudoku.sudoku import Sudoku
 
 
@@ -52,12 +53,28 @@ class Analyzer(Sudoku):
             self.cols[cell.col][option] += 1
             self.blocks[cell.block][option] += 1
 
+        def sub(self, cell: Sudoku.Cell, option: Sudoku.Cell.Option) -> None:
+            self.rows[cell.row][option] -= 1
+            self.cols[cell.col][option] -= 1
+            self.blocks[cell.block][option] -= 1
+
         def has_zero(self) -> bool:
             for group in [self.rows, self.cols, self.blocks]:
                 for cnt in group:
                     if not all(cnt.values()):
                         return True
             return False
+
+        def get_unique_group(
+            self, cell: Sudoku.Cell, val: Sudoku.Cell.Option
+        ) -> str | None:
+            if self.rows[cell.row][val] == 1:
+                return "row"
+            elif self.cols[cell.col][val] == 1:
+                return "col"
+            elif self.blocks[cell.block][val] == 1:
+                return "block"
+            return None
 
     def _build_grid(self, sudoku: Sudoku) -> None:
         self._grid = [
@@ -89,17 +106,33 @@ class Analyzer(Sudoku):
         else:
             return self._grid[ind.row][ind.col].options
 
+    def _discard(self, cell: Sudoku.Cell, option: Sudoku.Cell.Option) -> None:
+        if option in self[cell]:
+            self[cell].remove(option)
+            self._counter.sub(cell, option)
+
+    def _discard_other_options(self, move: Move) -> None:
+        for val in Sudoku.Cell.Option.all():
+            if val != move.val:
+                self._discard(move.cell, val)
+
+    def _update_rel_cells(self, move: Move) -> None:
+        for rel_cell in self.related_empty_cells(move.cell):
+            self._discard(rel_cell, move.val)
+
+    def apply(self, move: Move) -> None:
+        cell = self._grid[move.cell.row][move.cell.col]
+        cell.val = move.val  # this is not equivalent to move.apply()
+        self._discard_other_options(move)
+        self._update_rel_cells(move)
+
     def _has_unfillable_cell(self) -> bool:
         return any(not self[cell] for cell in self.empty_cells)
 
     def check(self) -> bool:
         return not self._has_unfillable_cell() and not self._counter.has_zero()
 
-    def row_occ(self, row: int, option: Sudoku.Cell.Option) -> int:
-        return self._counter.rows[row][option]
-
-    def col_occ(self, col: int, option: Sudoku.Cell.Option) -> int:
-        return self._counter.cols[col][option]
-
-    def block_occ(self, block: int, option: Sudoku.Cell.Option) -> int:
-        return self._counter.blocks[block][option]
+    def get_unique_group(
+        self, cell: Sudoku.Cell, val: Sudoku.Cell.Option
+    ) -> str | None:
+        return self._counter.get_unique_group(cell, val)

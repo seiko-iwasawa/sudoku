@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from collections.abc import Generator
+from copy import deepcopy
 from typing import override
 
 from pysudoku.analyzer import Analyzer
@@ -76,6 +77,7 @@ class SolverHuman(Solver):
     def __init__(self, sudoku: Sudoku, explain: bool = False) -> None:
         super().__init__(sudoku)
         self._explain = explain
+        self._analyzer = Analyzer(sudoku)
         self._complexity = 0
         self._depth = 0
 
@@ -86,50 +88,41 @@ class SolverHuman(Solver):
         self._complexity += complexity
         if self._explain:
             print("." * self._depth + str(move))
+        self._analyzer.apply(move)
         return move
 
-    def _easy_move(self, analyzer: Analyzer) -> InfoMove | None:
+    def _easy_move(self) -> InfoMove | None:
         for cell in self._sudoku.empty_cells:
-            if len(analyzer[cell]) == 1:
-                val = next(iter(analyzer[cell]))
+            if len(self._analyzer[cell]) == 1:
+                val = next(iter(self._analyzer[cell]))
                 return self._move(cell, val, "other options are blocked", 1)
         return None
 
-    def _get_unique_group(
-        self, analyzer: Analyzer, cell: Sudoku.Cell, val: Sudoku.Cell.Option
-    ) -> str | None:
-        if analyzer.row_occ(cell.row, val) == 1:
-            return "row"
-        elif analyzer.col_occ(cell.col, val) == 1:
-            return "col"
-        elif analyzer.block_occ(cell.block, val) == 1:
-            return "block"
-        return None
-
-    def _medium_move(self, analyzer: Analyzer) -> InfoMove | None:
+    def _medium_move(self) -> InfoMove | None:
         for cell in self._sudoku.empty_cells:
-            for val in analyzer[cell]:
-                if group := self._get_unique_group(analyzer, cell, val):
+            for val in self._analyzer[cell]:
+                if group := self._analyzer.get_unique_group(cell, val):
                     return self._move(
                         cell, val, f"according {group} has only one occurrence", 5
                     )
         return None
 
-    def _brute_force(self, analyzer: Analyzer) -> Generator[InfoMove]:
-        cell = min(self._sudoku.empty_cells, key=lambda cell: len(analyzer[cell]))
-        self._complexity += 25 * len(analyzer[cell])
+    def _brute_force(self) -> Generator[InfoMove]:
+        cell = min(self._sudoku.empty_cells, key=lambda cell: len(self._analyzer[cell]))
+        self._complexity += 25 * len(self._analyzer[cell])
         self._depth += 1
+        analyzer = deepcopy(self._analyzer)
         for val in analyzer[cell]:
             yield self._move(cell, val, "brute force", 0)
+            self._analyzer = deepcopy(analyzer)
         self._depth -= 1
 
     def predict_move(self) -> Generator[InfoMove]:
-        options = Analyzer(self._sudoku)
-        if not options.check():
+        if not self._analyzer.check():
             ...
-        elif move := self._easy_move(options):
+        elif move := self._easy_move():
             yield move
-        elif move := self._medium_move(options):
+        elif move := self._medium_move():
             yield move
         else:
-            yield from self._brute_force(options)
+            yield from self._brute_force()

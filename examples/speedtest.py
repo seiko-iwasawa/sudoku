@@ -1,7 +1,6 @@
 import time
 
-from pysudoku.solver import SolverHuman
-from pysudoku.solver import SolverStupid
+from pysudoku.solver import SolverHuman, SolverStupid
 from pysudoku.sudoku import Sudoku
 
 easy_sudoku = """\
