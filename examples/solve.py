@@ -1,4 +1,4 @@
-from pysudoku.solverHuman import SolverHuman
+from pysudoku.solver import SolverHuman
 from pysudoku.sudoku import Sudoku
 
 
