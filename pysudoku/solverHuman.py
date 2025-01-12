@@ -70,7 +70,7 @@ class SolverHuman(SolverABC):
 
     def _brute_force(self, analyzer: Analyzer) -> Generator[InfoMove]:
         cell = min(self._sudoku.empty_cells, key=lambda cell: len(analyzer[cell]))
-        self._complexity += 25 ** len(analyzer[cell])
+        self._complexity += 25 * len(analyzer[cell])
         self._depth += 1
         for val in analyzer[cell]:
             yield self._move(cell, val, "brute force", 0)
