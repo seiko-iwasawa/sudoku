@@ -14,7 +14,7 @@ pip install .
 
 `SolverHuman` solves sudoku like a human. Works very fast.
 
-Usage example in [examples/solve.py](examples/solve.py).
+Usage examples in [examples/solve.py](examples/solve.py).
 
 `examples/solve.py` output:
 
