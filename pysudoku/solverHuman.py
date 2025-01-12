@@ -28,57 +28,6 @@ class InfoMove(Move):
         return self._info
 
 
-class Tree:
-
-    def __init__(self, analyzer: Analyzer, depth: int, move: InfoMove) -> None:
-        self._analyzer = deepcopy(analyzer)
-        self._depth = depth
-        self._move = move
-        self._branches: list[Tree] = []
-        self._no_solution = False
-        self._build()
-
-    @property
-    def no_solution(self) -> bool:
-        return self._no_solution
-
-    def _brute_force_order(self) -> list[Sudoku.Cell]:
-        first: list[Sudoku.Cell] = []
-        later: list[Sudoku.Cell] = []
-        for cell in self._analyzer.empty_cells:
-            (first if Sudoku.is_related(cell, self._move.cell) else later).append(cell)
-        return first + later
-
-    def _build_branch(self, move: InfoMove) -> bool:
-        branch = Tree(self._analyzer, self._depth - 1, move)
-        self._branches.append(branch)
-        return branch.no_solution
-
-    def _brute_force_cell(self, cell: Sudoku.Cell) -> bool:
-        return not all(
-            self._build_branch(
-                InfoMove(cell, option, f"tree search (depth: {self._depth})")
-            )
-            for option in self._analyzer[cell]
-        )
-
-    def _build(self) -> None:
-        self._analyzer.apply(self._move)
-        if not self._analyzer.check():
-            self._no_solution = True
-            return
-        if self._depth == 1:
-            return
-        self._analyzer.simplify()
-        if not self._analyzer.check():
-            self._no_solution = True
-            return
-        for cell in self._brute_force_order():
-            if not self._brute_force_cell(cell):
-                self._no_solution = True
-                return
-
-
 class SolverHuman(SolverABC):
 
     def __init__(self, sudoku: Sudoku, explain: bool = False) -> None:
@@ -108,20 +57,6 @@ class SolverHuman(SolverABC):
                         cell, val, f"according {group} has only one occurrence"
                     )
 
-    def _hard_move(self, analyzer: Analyzer) -> tuple[InfoMove, int] | None:
-        for depth in [1, 2, 3]:
-            for cell in self._sudoku.empty_cells:
-                vals: list[Sudoku.Cell.Option] = []
-                for val in analyzer[cell]:
-                    if not Tree(analyzer, depth, InfoMove(cell, val)).no_solution:
-                        vals.append(val)
-                    if len(vals) > 1:
-                        break
-                if not vals:
-                    return
-                if len(vals) == 1:
-                    return InfoMove(cell, vals[0], "..."), depth
-
     def _brute_force(self, analyzer: Analyzer) -> Generator[InfoMove]:
         cell = min(self._sudoku.empty_cells, key=lambda cell: len(analyzer[cell]))
         self._complexity += 25 ** len(analyzer[cell])
@@ -133,7 +68,7 @@ class SolverHuman(SolverABC):
     def record(
         self,
         mode: Literal[
-            "easy", "medium", "hard", "brute force", "branch-in", "branch-out"
+            "easy", "medium", "brute force", "branch-in", "branch-out"
         ],
         move: InfoMove,
     ) -> None:
@@ -141,8 +76,6 @@ class SolverHuman(SolverABC):
             self._complexity += 1
         elif mode == "medium":
             self._complexity += 5
-        elif mode == "hard":
-            self._complexity += 25
         if self._explain:
             print(move)
 

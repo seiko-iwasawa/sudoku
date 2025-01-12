@@ -54,18 +54,6 @@ class Analyzer(Sudoku):
             self.cols[cell.col][option] += 1
             self.blocks[cell.block][option] += 1
 
-        def sub(self, cell: Sudoku.Cell, option: Sudoku.Cell.Option) -> None:
-            self.rows[cell.row][option] -= 1
-            self.cols[cell.col][option] -= 1
-            self.blocks[cell.block][option] -= 1
-
-        def is_unique(self, cell: Sudoku.Cell, option: Sudoku.Cell.Option) -> bool:
-            return (
-                self.rows[cell.row][option] == 1
-                or self.cols[cell.col][option] == 1
-                or self.blocks[cell.block][option] == 1
-            )
-
         def has_zero(self) -> bool:
             for group in [self.rows, self.cols, self.blocks]:
                 for cnt in group:
@@ -103,48 +91,6 @@ class Analyzer(Sudoku):
         else:
             return self._grid[ind.row][ind.col].options
 
-    def _discard(self, cell: Sudoku.Cell, option: Sudoku.Cell.Option) -> None:
-        if option in self[cell]:
-            self[cell].remove(option)
-            self._counter.sub(cell, option)
-
-    def _discard_other_options(self, move: Move) -> None:
-        for val in Sudoku.Cell.Option.all():
-            if val != move.val:
-                self._discard(move.cell, val)
-
-    def _update_rel_cells(self, move: Move) -> None:
-        for rel_cell in self.related_empty_cells(move.cell):
-            self._discard(rel_cell, move.val)
-
-    def apply(self, move: Move) -> None:
-        cell = self._grid[move.cell.row][move.cell.col]
-        cell.val = move.val  # this is not equivalent to move.apply()
-        self._discard_other_options(move)
-        self._update_rel_cells(move)
-
-    def _get_all_moves(self) -> Generator[Move]:
-        for cell in self.empty_cells:
-            yield from (Move(cell, option) for option in self[cell])
-
-    def _is_forced(self, move: Move) -> bool:
-        return move.val in self[move.cell] and (
-            len(self[move.cell]) == 1 or self._counter.is_unique(move.cell, move.val)
-        )
-
-    def _find_forced_move(self) -> Move | None:
-        if any(self._is_forced(res := move) for move in self._get_all_moves()):
-            return res
-
-    def reduce(self) -> bool:
-        if move := self._find_forced_move():
-            self.apply(move)
-        return move is not None
-
-    def simplify(self) -> None:
-        while self.check() and self.reduce():
-            ...
-
     def _has_unfillable_cell(self) -> bool:
         return any(not self[cell] for cell in self.empty_cells)
 
@@ -159,12 +105,3 @@ class Analyzer(Sudoku):
 
     def block_occ(self, block: int, option: Sudoku.Cell.Option) -> int:
         return self._counter.blocks[block][option]
-
-    def cell_occ(
-        self, cell: Sudoku.Cell, option: Sudoku.Cell.Option
-    ) -> tuple[int, int, int]:
-        return (
-            self.row_occ(cell.row, option),
-            self.col_occ(cell.col, option),
-            self.block_occ(cell.block, option),
-        )

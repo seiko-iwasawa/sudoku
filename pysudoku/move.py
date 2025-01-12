@@ -26,9 +26,3 @@ class Move:
 
     def undo(self) -> None:
         self._cell.reset()
-
-    def is_correct(self, sudoku: Sudoku) -> bool:
-        return all(
-            rel_cell.val != self.val
-            for rel_cell in sudoku.related_filled_cells(self.cell)
-        )
