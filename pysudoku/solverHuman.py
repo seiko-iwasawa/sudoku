@@ -1,5 +1,5 @@
 from collections.abc import Generator
-from typing import Literal, override
+from typing import override
 
 from pysudoku.analyzer import Analyzer
 from pysudoku.solverABC import Move, SolverABC, Sudoku
@@ -49,6 +49,7 @@ class SolverHuman(SolverABC):
             if len(analyzer[cell]) == 1:
                 val = next(iter(analyzer[cell]))
                 return self._move(cell, val, "other options are blocked", 1)
+        return None
 
     def _get_unique_group(
         self, analyzer: Analyzer, cell: Sudoku.Cell, val: Sudoku.Cell.Option
@@ -59,6 +60,7 @@ class SolverHuman(SolverABC):
             return "col"
         elif analyzer.block_occ(cell.block, val) == 1:
             return "block"
+        return None
 
     def _medium_move(self, analyzer: Analyzer) -> InfoMove | None:
         for cell in self._sudoku.empty_cells:
@@ -67,6 +69,7 @@ class SolverHuman(SolverABC):
                     return self._move(
                         cell, val, f"according {group} has only one occurrence", 5
                     )
+        return None
 
     def _brute_force(self, analyzer: Analyzer) -> Generator[InfoMove]:
         cell = min(self._sudoku.empty_cells, key=lambda cell: len(analyzer[cell]))

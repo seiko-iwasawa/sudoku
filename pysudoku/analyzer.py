@@ -1,7 +1,5 @@
-from collections.abc import Generator
 from typing import overload, override
 
-from pysudoku.move import Move
 from pysudoku.sudoku import Sudoku
 
 

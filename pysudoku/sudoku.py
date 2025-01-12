@@ -13,7 +13,7 @@ class Sudoku:
         class Option:
 
             def __init__(self, val: int = 0) -> None:
-                if not (0 <= val <= Sudoku.N):
+                if not 0 <= val <= Sudoku.N:
                     raise ValueError(f"incorrect cell option: {val}")
                 self._val = val
 
@@ -21,8 +21,8 @@ class Sudoku:
             def from_str(cls, val: str) -> "Sudoku.Cell.Option":
                 try:
                     return cls(0 if val == "." else int(val))
-                except Exception:
-                    raise ValueError(f"incorrect cell option: {val}")
+                except Exception as exc:
+                    raise ValueError(f"incorrect cell option: {val}") from exc
 
             def __int__(self) -> int:
                 return self._val
@@ -136,7 +136,7 @@ class Sudoku:
         def set_val():
             try:
                 sudoku[i][j].val = Sudoku.Cell.Option.from_str(val)
-            except Exception:
+            except (IndexError, ValueError):
                 print(f"warning: incorrect cell {Sudoku.Cell(i, j)}-{val}")
 
         sudoku = Sudoku()
