@@ -33,6 +33,7 @@ class SolverHuman(SolverABC):
         super().__init__(sudoku)
         self._explain = explain
         self._complexity = 0
+        self._depth = 0
 
     def _move(
         self, cell: Sudoku.Cell, val: Sudoku.Cell.Option, info: str, complexity: int
@@ -40,7 +41,7 @@ class SolverHuman(SolverABC):
         move = InfoMove(cell, val, info)
         self._complexity += complexity
         if self._explain:
-            print(move)
+            print("." * self._depth + str(move))
         return move
 
     def _easy_move(self, analyzer: Analyzer) -> InfoMove | None:
@@ -70,8 +71,10 @@ class SolverHuman(SolverABC):
     def _brute_force(self, analyzer: Analyzer) -> Generator[InfoMove]:
         cell = min(self._sudoku.empty_cells, key=lambda cell: len(analyzer[cell]))
         self._complexity += 25 ** len(analyzer[cell])
+        self._depth += 1
         for val in analyzer[cell]:
             yield self._move(cell, val, "brute force", 0)
+        self._depth -= 1
 
     def predict_move(self) -> Generator[InfoMove]:
         options = Analyzer(self._sudoku)
