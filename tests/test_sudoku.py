@@ -161,6 +161,8 @@ class TestSudoku(unittest.TestCase):
 """
         )
         self.assertEqual(repr(Sudoku.from_input()), repr(self.sudoku))
+        sys.stdin = io.StringIO("?" + "\n" * 9)
+        self.assertEqual(repr(Sudoku.from_input()), repr(self.empty_sudoku))
 
     def test_is_related(self):
         self.assertFalse(Sudoku.is_related(Sudoku.Cell(2, 5), Sudoku.Cell(8, 1)))
