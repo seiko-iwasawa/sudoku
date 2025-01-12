@@ -4,7 +4,7 @@
 
 From source:
 
-```[bash]
+```bash
 pip install .
 ```
 
@@ -18,7 +18,7 @@ Usage example in [examples/solve.py](examples/solve.py).
 
 `examples/solve.py` output:
 
-```
+```text
 [1, 9]->6 (according row has only one occurrence)
 .[4, 6]->8 (brute force)
 ..[2, 6]->1 (brute force)
